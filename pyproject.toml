@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ascii_render"
+version = "0.1.0"
+description = "Render images/videos to colored ASCII art with glow effects"
+requires-python = ">=3.10"
+dependencies = [
+    "pillow>=10.0.0",
+    "numpy>=1.24.0",
+    "opencv-python>=4.8.0",
+    "click>=8.0.0",
+]
+
+[project.scripts]
+ascii-render = "ascii_render.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
