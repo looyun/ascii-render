@@ -1,0 +1,2 @@
+[console_scripts]
+ascii-render = ascii_render.cli:main
