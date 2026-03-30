@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Protocol
 from enum import Enum
 from PIL import Image
+import numpy as np
 
 
 class ColorMode(Enum):
@@ -22,9 +23,9 @@ class RenderConfig:
 
 @dataclass
 class RenderResult:
-    frame_data: List[List[str]]
+    char_indices: np.ndarray
+    colors: np.ndarray
     dimensions: tuple[int, int]
-    colors: List[List[tuple[int, int, int]]] | None = None
 
 
 class Effect(Protocol):

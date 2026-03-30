@@ -93,9 +93,9 @@ def main(
 
         from .io.ansi import ANSIFormatter
 
-        formatter = ANSIFormatter(config.color_mode)
+        formatter = ANSIFormatter(config.color_mode, chars)
 
-        frames = (
+        frame_iterator = (
             processor.read_gif(str(input_path))
             if is_gif
             else processor.read_video_frames(str(input_path))
@@ -103,48 +103,42 @@ def main(
 
         if output:
             output_file = open(output, "w")
-            for frame in frames:
+            for frame in frame_iterator:
+                frame = renderer._preprocess(frame)
                 result = renderer._render_to_ascii(frame)
-                formatted = formatter.format(result, frame)
+                formatted = formatter.format(result)
                 output_file.write(formatted + "\n\n")
             output_file.close()
         else:
-            click.echo("Loading frames...", err=True)
-            frames_list = list(frames)
-            total_frames = len(frames_list)
-
-            click.echo(f"Rendering {total_frames} frames...", err=True)
-            rendered_frames = []
-            for i, frame in enumerate(frames_list):
-                result = renderer._render_to_ascii(frame)
-                formatted = formatter.format(result, frame)
-                rendered_frames.append(formatted)
-                if (i + 1) % 10 == 0 or i + 1 == total_frames:
-                    click.echo(
-                        f"\rRendered {i + 1}/{total_frames} frames", err=True, nl=False
-                    )
-
-            click.echo("\nPlaying... (Ctrl+C to stop)", err=True)
-            click.echo("\033[2J\033[H", nl=False)
+            sys.stdout.write("\033[?25l\033[2J\033[H")
+            sys.stdout.flush()
+            click.echo("Playing... (Ctrl+C to stop)", err=True)
 
             try:
                 while True:
-                    for formatted in rendered_frames:
-                        start_time = time.time()
+                    for frame in frame_iterator:
+                        frame_start = time.time()
 
-                        click.echo("\033[H", nl=False)
-                        sys.stdout.write(formatted)
+                        frame = renderer._preprocess(frame)
+                        for effect in renderer._effects:
+                            frame = effect.apply(frame)
+                        result = renderer._render_to_ascii(frame)
+                        formatted = formatter.format(result)
+
+                        sys.stdout.write("\033[H" + formatted)
                         sys.stdout.flush()
 
-                        elapsed = time.time() - start_time
-                        sleep_time = frame_delay - elapsed
+                        render_time = time.time() - frame_start
+                        sleep_time = frame_delay - render_time
                         if sleep_time > 0:
                             time.sleep(sleep_time)
 
                     if not is_gif:
                         break
             except KeyboardInterrupt:
-                click.echo("\n\033[0mPlayback stopped.")
+                sys.stdout.write("\033[?25h\033[0m\n")
+                sys.stdout.flush()
+                click.echo(f"Played {frame_count} frames, stopped.")
     else:
         result = renderer.render(str(input_path))
         if output:

@@ -1,56 +1,60 @@
-from PIL import Image
+import numpy as np
 from ..types import ColorMode, RenderResult
 
 
 class ANSIFormatter:
     ESCAPE = "\033"
     RESET = f"{ESCAPE}[0m"
-    BOLD = f"{ESCAPE}[1m"
 
-    def __init__(self, mode: ColorMode = ColorMode.TRUECOLOR):
+    def __init__(
+        self, mode: ColorMode = ColorMode.TRUECOLOR, char_set: str = " .:-=+*#%@"
+    ):
         self.mode = mode
+        self.char_set = char_set
+        self._chars = list(char_set)
+        self._num_chars = len(char_set)
 
-    def _truecolor(self, r: int, g: int, b: int) -> str:
-        return f"{self.ESCAPE}[38;2;{r};{g};{b}m"
-
-    def _color_256(self, r: int, g: int, b: int) -> str:
-        gray = (r * 30 + g * 59 + b * 11) // 100
-        return f"{self.ESCAPE}[38;5;{min(232 + gray, 255)}m"
-
-    def _color_8(self, r: int, g: int, b: int) -> str:
-        max_c = max(r, g, b)
-        min_c = min(r, g, b)
-        brightness = (max_c + min_c) // 2
-        color_idx = 30 + (1 if r > 128 else 4 if g > 128 else 2 if b > 128 else 0)
-        return f"{self.ESCAPE}[{color_idx}m"
-
-    def format(self, result: RenderResult, image: Image.Image) -> str:
-        if self.mode == ColorMode.TRUECOLOR:
-            color_fn = self._truecolor
-        elif self.mode == ColorMode.MODE_256:
-            color_fn = self._color_256
-        else:
-            color_fn = self._color_8
+    def format(self, result: RenderResult) -> str:
+        char_indices = result.char_indices
+        colors = result.colors
+        width, height = result.dimensions
 
         lines = []
-        frame_data = result.frame_data
-        colors = result.colors
+        escape = self.ESCAPE
+        reset = self.RESET
 
-        for y in range(len(frame_data)):
-            row = frame_data[y]
-            row_colors = colors[y] if colors else None
-            line_parts = []
-
-            for x in range(len(row)):
-                char = row[x]
-                if row_colors and x < len(row_colors):
-                    r, g, b = row_colors[x]
-                    line_parts.append(color_fn(r, g, b))
-                    line_parts.append(char)
-                else:
-                    line_parts.append(char)
-
-            line_parts.append(self.RESET)
-            lines.append("".join(line_parts))
+        if self.mode == ColorMode.TRUECOLOR:
+            for y in range(height):
+                row_chars = []
+                for x in range(width):
+                    r, g, b = colors[y, x]
+                    c = self._chars[char_indices[y, x]]
+                    row_chars.append(f"{escape}[38;2;{r};{g};{b}m{c}")
+                lines.append("".join(row_chars) + reset)
+        elif self.mode == ColorMode.MODE_256:
+            gray_weights = np.array([30, 59, 11])
+            gray = np.dot(colors[:, :, :3], gray_weights) // 100
+            gray = np.minimum(232 + gray, 255).astype(np.int32)
+            for y in range(height):
+                row_chars = []
+                for x in range(width):
+                    c = self._chars[char_indices[y, x]]
+                    g = gray[y, x]
+                    row_chars.append(f"{escape}[38;5;{g}m{c}")
+                lines.append("".join(row_chars) + reset)
+        else:
+            r = colors[:, :, 0]
+            g = colors[:, :, 1]
+            b = colors[:, :, 2]
+            color_idx = 30 + np.where(
+                r > 128, 1, np.where(g > 128, 4, np.where(b > 128, 2, 0))
+            )
+            for y in range(height):
+                row_chars = []
+                for x in range(width):
+                    c = self._chars[char_indices[y, x]]
+                    ci = color_idx[y, x]
+                    row_chars.append(f"{escape}[{ci}m{c}")
+                lines.append("".join(row_chars) + reset)
 
         return "\n".join(lines)

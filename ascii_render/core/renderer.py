@@ -25,8 +25,8 @@ class Renderer:
             image = effect.apply(image)
 
         result = self._render_to_ascii(image)
-        formatter = ANSIFormatter(self.config.color_mode)
-        return formatter.format(result, image)
+        formatter = ANSIFormatter(self.config.color_mode, self.config.char_set)
+        return formatter.format(result)
 
     def _preprocess(self, image: Image.Image) -> Image.Image:
         if self.config.width or self.config.height:
@@ -54,21 +54,16 @@ class Renderer:
         img_array = np.array(image)
         height, width = img_array.shape[:2]
 
-        brightness = np.mean(img_array, axis=2) / 255.0
+        brightness = np.mean(img_array, axis=2, dtype=np.float32) * (1.0 / 255.0)
 
         if self.config.invert:
             brightness = 1.0 - brightness
 
-        chars = self.config.char_set
-        num_chars = len(chars)
+        num_chars = len(self.config.char_set)
 
-        char_indices = np.clip((brightness * num_chars).astype(int), 0, num_chars - 1)
-        char_array = np.array(list(chars))
-        frame_data = char_array[char_indices].tolist()
-
-        colors = img_array.reshape(height, width, 3).tolist()
-        colors = [[tuple(c) for c in row] for row in colors]
+        char_indices = (brightness * num_chars).astype(np.int32)
+        np.clip(char_indices, 0, num_chars - 1, out=char_indices)
 
         return RenderResult(
-            frame_data=frame_data, dimensions=(width, height), colors=colors
+            char_indices=char_indices, colors=img_array, dimensions=(width, height)
         )
