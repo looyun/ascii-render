@@ -2,6 +2,8 @@ import click
 from pathlib import Path
 from typing import Optional
 import shutil
+import time
+import sys
 
 from .core.renderer import Renderer
 from .effects.glow import GlowEffect
@@ -87,28 +89,56 @@ def main(
 
     if is_video or is_gif:
         processor = VideoProcessor()
-        frames = (
-            processor.read_gif(str(input_path))
-            if is_gif
-            else processor.read_video_frames(str(input_path))
-        )
-        output_file = open(output, "w") if output else None
+        frame_delay = 1.0 / fps
 
-        for frame in frames:
-            result = renderer._render_to_ascii(frame)
+        if output:
+            frames = (
+                processor.read_gif(str(input_path))
+                if is_gif
+                else processor.read_video_frames(str(input_path))
+            )
+            output_file = open(output, "w")
+            for frame in frames:
+                result = renderer._render_to_ascii(frame)
+                from .io.ansi import ANSIFormatter
+
+                formatter = ANSIFormatter(config.color_mode)
+                formatted = formatter.format(result, frame)
+                output_file.write(formatted + "\n\n")
+            output_file.close()
+        else:
             from .io.ansi import ANSIFormatter
 
             formatter = ANSIFormatter(config.color_mode)
-            formatted = formatter.format(result, frame)
 
-            if output_file:
-                output_file.write(formatted + "\n\n")
-            else:
-                click.echo(formatted)
-                click.echo("\n")
+            click.echo("\033[2J\033[H", nl=False)
 
-        if output_file:
-            output_file.close()
+            frames_list = list(
+                processor.read_gif(str(input_path))
+                if is_gif
+                else processor.read_video_frames(str(input_path))
+            )
+
+            try:
+                while True:
+                    for frame in frames_list:
+                        start_time = time.time()
+
+                        result = renderer._render_to_ascii(frame)
+                        formatted = formatter.format(result, frame)
+
+                        click.echo("\033[H", nl=False)
+                        click.echo(formatted)
+
+                        elapsed = time.time() - start_time
+                        sleep_time = frame_delay - elapsed
+                        if sleep_time > 0:
+                            time.sleep(sleep_time)
+
+                    if not is_gif:
+                        break
+            except KeyboardInterrupt:
+                click.echo("\n\033[0mPlayback stopped.")
     else:
         result = renderer.render(str(input_path))
         if output:
