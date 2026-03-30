@@ -38,8 +38,8 @@ class Renderer:
                 aspect = orig_w / orig_h
                 char_aspect = 0.5
 
-                height_from_width = int(target_width / aspect / char_aspect)
-                width_from_height = int(target_height * aspect * char_aspect)
+                height_from_width = int(target_width * char_aspect / aspect)
+                width_from_height = int(target_height * aspect / char_aspect)
 
                 if height_from_width <= target_height:
                     target_height = height_from_width
