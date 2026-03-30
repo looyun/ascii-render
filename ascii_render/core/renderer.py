@@ -31,22 +31,22 @@ class Renderer:
     def _preprocess(self, image: Image.Image) -> Image.Image:
         if self.config.width or self.config.height:
             target_width = self.config.width or 80
-            target_height = self.config.height
+            target_height = self.config.height or 24
 
             if self.config.preserve_aspect:
                 orig_w, orig_h = image.size
                 aspect = orig_w / orig_h
                 char_aspect = 0.5
 
-                if self.config.height is None:
-                    target_height = int(target_width / aspect / char_aspect)
-                elif self.config.width is None:
-                    target_height = target_height or 24
-                    target_width = int(target_height * aspect * char_aspect)
-                else:
-                    pass
+                height_from_width = int(target_width / aspect / char_aspect)
+                width_from_height = int(target_height * aspect * char_aspect)
 
-            image = image.resize((target_width, target_height or target_width // 2))
+                if height_from_width <= target_height:
+                    target_height = height_from_width
+                else:
+                    target_width = width_from_height
+
+            image = image.resize((target_width, target_height))
 
         return image.convert("RGB")
 
