@@ -1,6 +1,7 @@
 import click
 from pathlib import Path
 from typing import Optional
+import shutil
 
 from .core.renderer import Renderer
 from .effects.glow import GlowEffect
@@ -8,9 +9,19 @@ from .types import RenderConfig, ColorMode
 from .io.video import VideoProcessor
 
 
+def get_terminal_width():
+    return shutil.get_terminal_size().columns
+
+
 @click.command()
 @click.argument("input", type=click.Path(exists=True))
-@click.option("--width", "-w", default=80, help="Output width in characters")
+@click.option(
+    "--width",
+    "-w",
+    default=None,
+    type=int,
+    help="Output width in characters (auto-detect by default)",
+)
 @click.option(
     "--height", "-H", default=None, type=int, help="Output height (auto if not set)"
 )
@@ -41,6 +52,9 @@ def main(
     color_mode: str,
 ):
     input_path = Path(input)
+
+    if width is None:
+        width = get_terminal_width()
 
     color_map = {
         "8": ColorMode.MODE_8,
