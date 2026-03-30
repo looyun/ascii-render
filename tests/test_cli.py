@@ -2,9 +2,10 @@ import pytest
 from click.testing import CliRunner
 import tempfile
 import os
+from unittest.mock import patch
 from PIL import Image
 
-from ascii_render.cli import main
+from ascii_render.cli import main, get_terminal_width
 
 
 @pytest.fixture
@@ -36,3 +37,17 @@ def test_cli_output_file(temp_image):
     result = runner.invoke(main, [temp_image, "--width", "20", "--output", output_path])
     os.unlink(output_path)
     assert result.exit_code == 0
+
+
+def test_get_terminal_width():
+    width = get_terminal_width()
+    assert isinstance(width, int)
+    assert width > 0
+
+
+def test_cli_auto_width_detection(temp_image):
+    runner = CliRunner()
+    with patch("ascii_render.cli.get_terminal_width", return_value=120):
+        result = runner.invoke(main, [temp_image])
+    assert result.exit_code == 0
+    assert len(result.output) > 0
