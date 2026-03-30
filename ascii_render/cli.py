@@ -13,6 +13,10 @@ def get_terminal_width():
     return shutil.get_terminal_size().columns
 
 
+def get_terminal_height():
+    return shutil.get_terminal_size().lines
+
+
 @click.command()
 @click.argument("input", type=click.Path(exists=True))
 @click.option(
@@ -55,6 +59,9 @@ def main(
 
     if width is None:
         width = get_terminal_width()
+
+    if height is None:
+        height = get_terminal_height()
 
     color_map = {
         "8": ColorMode.MODE_8,

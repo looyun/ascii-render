@@ -5,7 +5,7 @@ import os
 from unittest.mock import patch
 from PIL import Image
 
-from ascii_render.cli import main, get_terminal_width
+from ascii_render.cli import main, get_terminal_width, get_terminal_height
 
 
 @pytest.fixture
@@ -43,6 +43,12 @@ def test_get_terminal_width():
     width = get_terminal_width()
     assert isinstance(width, int)
     assert width > 0
+
+
+def test_get_terminal_height():
+    height = get_terminal_height()
+    assert isinstance(height, int)
+    assert height > 0
 
 
 def test_cli_auto_width_detection(temp_image):
