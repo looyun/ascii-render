@@ -37,7 +37,14 @@ class Renderer:
                 orig_w, orig_h = image.size
                 aspect = orig_w / orig_h
                 char_aspect = 0.5
-                target_height = int(target_width / aspect / char_aspect)
+
+                if self.config.height is None:
+                    target_height = int(target_width / aspect / char_aspect)
+                elif self.config.width is None:
+                    target_height = target_height or 24
+                    target_width = int(target_height * aspect * char_aspect)
+                else:
+                    pass
 
             image = image.resize((target_width, target_height or target_width // 2))
 
