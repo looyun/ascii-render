@@ -33,14 +33,24 @@ class ANSIFormatter:
             color_fn = self._color_8
 
         lines = []
-        for y, row in enumerate(result.frame_data):
-            line_chars = []
-            for x, char in enumerate(row):
-                if result.colors and x < len(result.colors[y]):
-                    r, g, b = result.colors[y][x]
-                    line_chars.append(f"{color_fn(r, g, b)}{char}")
+        frame_data = result.frame_data
+        colors = result.colors
+
+        for y in range(len(frame_data)):
+            row = frame_data[y]
+            row_colors = colors[y] if colors else None
+            line_parts = []
+
+            for x in range(len(row)):
+                char = row[x]
+                if row_colors and x < len(row_colors):
+                    r, g, b = row_colors[x]
+                    line_parts.append(color_fn(r, g, b))
+                    line_parts.append(char)
                 else:
-                    line_chars.append(char)
-            lines.append("".join(line_chars) + self.RESET)
+                    line_parts.append(char)
+
+            line_parts.append(self.RESET)
+            lines.append("".join(line_parts))
 
         return "\n".join(lines)

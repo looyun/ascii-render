@@ -62,20 +62,12 @@ class Renderer:
         chars = self.config.char_set
         num_chars = len(chars)
 
-        frame_data = []
-        colors = []
+        char_indices = np.clip((brightness * num_chars).astype(int), 0, num_chars - 1)
+        char_array = np.array(list(chars))
+        frame_data = char_array[char_indices].tolist()
 
-        for y in range(height):
-            row_chars = []
-            row_colors = []
-            for x in range(width):
-                bright = brightness[y, x]
-                char_idx = min(int(bright * num_chars), num_chars - 1)
-                char_idx = max(0, char_idx)
-                row_chars.append(chars[char_idx])
-                row_colors.append(tuple(img_array[y, x]))
-            frame_data.append(row_chars)
-            colors.append(row_colors)
+        colors = img_array.reshape(height, width, 3).tolist()
+        colors = [[tuple(c) for c in row] for row in colors]
 
         return RenderResult(
             frame_data=frame_data, dimensions=(width, height), colors=colors

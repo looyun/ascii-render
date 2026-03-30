@@ -91,44 +91,50 @@ def main(
         processor = VideoProcessor()
         frame_delay = 1.0 / fps
 
+        from .io.ansi import ANSIFormatter
+
+        formatter = ANSIFormatter(config.color_mode)
+
+        frames = (
+            processor.read_gif(str(input_path))
+            if is_gif
+            else processor.read_video_frames(str(input_path))
+        )
+
         if output:
-            frames = (
-                processor.read_gif(str(input_path))
-                if is_gif
-                else processor.read_video_frames(str(input_path))
-            )
             output_file = open(output, "w")
             for frame in frames:
                 result = renderer._render_to_ascii(frame)
-                from .io.ansi import ANSIFormatter
-
-                formatter = ANSIFormatter(config.color_mode)
                 formatted = formatter.format(result, frame)
                 output_file.write(formatted + "\n\n")
             output_file.close()
         else:
-            from .io.ansi import ANSIFormatter
+            click.echo("Loading frames...", err=True)
+            frames_list = list(frames)
+            total_frames = len(frames_list)
 
-            formatter = ANSIFormatter(config.color_mode)
+            click.echo(f"Rendering {total_frames} frames...", err=True)
+            rendered_frames = []
+            for i, frame in enumerate(frames_list):
+                result = renderer._render_to_ascii(frame)
+                formatted = formatter.format(result, frame)
+                rendered_frames.append(formatted)
+                if (i + 1) % 10 == 0 or i + 1 == total_frames:
+                    click.echo(
+                        f"\rRendered {i + 1}/{total_frames} frames", err=True, nl=False
+                    )
 
+            click.echo("\nPlaying... (Ctrl+C to stop)", err=True)
             click.echo("\033[2J\033[H", nl=False)
-
-            frames_list = list(
-                processor.read_gif(str(input_path))
-                if is_gif
-                else processor.read_video_frames(str(input_path))
-            )
 
             try:
                 while True:
-                    for frame in frames_list:
+                    for formatted in rendered_frames:
                         start_time = time.time()
 
-                        result = renderer._render_to_ascii(frame)
-                        formatted = formatter.format(result, frame)
-
                         click.echo("\033[H", nl=False)
-                        click.echo(formatted)
+                        sys.stdout.write(formatted)
+                        sys.stdout.flush()
 
                         elapsed = time.time() - start_time
                         sleep_time = frame_delay - elapsed
