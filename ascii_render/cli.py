@@ -7,6 +7,9 @@ import sys
 import select
 import tty
 import termios
+import urllib.request
+import tempfile
+import os
 
 from .core.renderer import Renderer
 from .effects.glow import GlowEffect
@@ -22,8 +25,26 @@ def get_terminal_height():
     return shutil.get_terminal_size().lines
 
 
+def download_if_url(path: str) -> Path:
+    if path.startswith(("http://", "https://")):
+        suffix = Path(path).suffix or ".tmp"
+        fd, temp_path = tempfile.mkstemp(suffix=suffix)
+        os.close(fd)
+        try:
+            req = urllib.request.Request(path, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req) as response:
+                with open(temp_path, "wb") as f:
+                    f.write(response.read())
+            return Path(temp_path)
+        except Exception as e:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            raise ValueError(f"Failed to download: {path} - {e}")
+    return Path(path)
+
+
 @click.command()
-@click.argument("input", type=click.Path(exists=True))
+@click.argument("input")
 @click.option(
     "--width",
     "-w",
@@ -41,7 +62,12 @@ def get_terminal_height():
 @click.option("--glow-intensity", default=0.5, type=float, help="Glow intensity (0-1)")
 @click.option("--highlight", is_flag=True, help="Enable bold/highlight text")
 @click.option("--loop", is_flag=True, help="Loop video playback")
-@click.option("--fps", default=30, type=int, help="Video frame rate")
+@click.option(
+    "--fps",
+    default=None,
+    type=int,
+    help="Frame rate (auto-detect for GIF, force override if specified)",
+)
 @click.option("--output", "-o", type=click.Path(), default=None, help="Output file")
 @click.option(
     "--color-mode",
@@ -64,7 +90,10 @@ def main(
     output: Optional[str],
     color_mode: str,
 ):
-    input_path = Path(input)
+    input_path = download_if_url(input)
+    temp_file = None
+    if str(input_path).startswith("/tmp"):
+        temp_file = input_path
 
     if width is None:
         width = get_terminal_width()
@@ -96,6 +125,15 @@ def main(
 
     if is_video or is_gif:
         processor = VideoProcessor()
+
+        if is_gif and fps is None:
+            gif_fps = processor.get_gif_info(str(input_path))
+            if gif_fps:
+                fps = int(gif_fps)
+
+        if fps is None:
+            fps = 30
+
         frame_delay = 1.0 / fps
 
         from .io.ansi import ANSIFormatter
@@ -121,15 +159,30 @@ def main(
                 formatted = formatter.format(result)
                 output_file.write(formatted + "\n\n")
             output_file.close()
+            if temp_file and os.path.exists(temp_file):
+                os.remove(temp_file)
         else:
-            sys.stdout.write("\033[?25l\033[2J\033[H")
+            sys.stdout.write("\033[?25l")
             sys.stdout.flush()
             click.echo("Playing... (Ctrl+C or q to stop)", err=True)
 
             old_settings = termios.tcgetattr(sys.stdin)
             try:
                 tty.setcbreak(sys.stdin.fileno())
+                sys.stdout.write("\033[2J\033[H\033[?25l")
+                sys.stdout.flush()
+
                 while True:
+                    current_width = shutil.get_terminal_size().columns
+                    current_height = shutil.get_terminal_size().lines
+
+                    if current_width != config.width or current_height != config.height:
+                        config.width = current_width
+                        config.height = current_height
+                        renderer.config = config
+                        sys.stdout.write("\033[2J\033[H")
+                        sys.stdout.flush()
+
                     frame_iterator = (
                         processor.read_gif(str(input_path))
                         if is_gif
@@ -164,12 +217,17 @@ def main(
                 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
                 sys.stdout.write("\033[?25h\033[0m\n")
                 sys.stdout.flush()
+                if temp_file and os.path.exists(temp_file):
+                    os.remove(temp_file)
     else:
         result = renderer.render(str(input_path))
         if output:
             Path(output).write_text(result)
         else:
             click.echo(result)
+
+    if temp_file and os.path.exists(temp_file):
+        os.remove(temp_file)
 
 
 if __name__ == "__main__":

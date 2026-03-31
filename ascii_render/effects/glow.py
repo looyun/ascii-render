@@ -4,7 +4,7 @@ from ..core.effects import Effect
 
 
 class GlowEffect(Effect):
-    def __init__(self, radius: int = 3, intensity: float = 0.5, threshold: float = 0.3):
+    def __init__(self, radius: int = 3, intensity: float = 0.5, threshold: float = 0.5):
         self.radius = radius
         self.intensity = intensity
         self.threshold = threshold
@@ -22,8 +22,12 @@ class GlowEffect(Effect):
         for c in range(3):
             result[:, :, c] = np.where(
                 mask,
-                img_array[:, :, c]
-                + (blur_array[:, :, c] - img_array[:, :, c]) * self.intensity,
+                np.clip(
+                    img_array[:, :, c]
+                    + (blur_array[:, :, c] - img_array[:, :, c]) * self.intensity,
+                    0,
+                    1,
+                ),
                 img_array[:, :, c],
             )
 

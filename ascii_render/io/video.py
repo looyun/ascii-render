@@ -15,6 +15,16 @@ class VideoProcessor:
             pass
 
     @staticmethod
+    def get_gif_info(path: str) -> Optional[float]:
+        img = Image.open(path)
+        if img.format == "GIF" and "duration" in img.info:
+            duration = img.info["duration"]
+            if isinstance(duration, list):
+                duration = sum(duration) / len(duration) if duration else 100
+            return 1000.0 / duration if duration > 0 else 10.0
+        return None
+
+    @staticmethod
     def read_video_frames(
         path: str, max_frames: Optional[int] = None
     ) -> Iterator[Image.Image]:

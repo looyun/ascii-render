@@ -48,6 +48,10 @@ class Renderer:
 
             image = image.resize((target_width, target_height))
 
+        if image.mode == "RGBA":
+            background = Image.new("RGB", image.size, (0, 0, 0))
+            background.paste(image, mask=image.split()[3])
+            return background
         return image.convert("RGB")
 
     def _render_to_ascii(self, image: Image.Image) -> RenderResult:
