@@ -5,12 +5,17 @@ from ..types import ColorMode, RenderResult
 class ANSIFormatter:
     ESCAPE = "\033"
     RESET = f"{ESCAPE}[0m"
+    BOLD = f"{ESCAPE}[1m"
 
     def __init__(
-        self, mode: ColorMode = ColorMode.TRUECOLOR, char_set: str = " .:-=+*#%@"
+        self,
+        mode: ColorMode = ColorMode.TRUECOLOR,
+        char_set: str = " .:-=+*#%@",
+        highlight: bool = False,
     ):
         self.mode = mode
         self.char_set = char_set
+        self.highlight = highlight
         self._chars = list(char_set)
         self._num_chars = len(char_set)
 
@@ -22,6 +27,7 @@ class ANSIFormatter:
         lines = []
         escape = self.ESCAPE
         reset = self.RESET
+        prefix = self.BOLD if self.highlight else ""
 
         if self.mode == ColorMode.TRUECOLOR:
             for y in range(height):
@@ -29,7 +35,7 @@ class ANSIFormatter:
                 for x in range(width):
                     r, g, b = colors[y, x]
                     c = self._chars[char_indices[y, x]]
-                    row_chars.append(f"{escape}[38;2;{r};{g};{b}m{c}")
+                    row_chars.append(f"{escape}[38;2;{r};{g};{b}m{prefix}{c}")
                 lines.append("".join(row_chars) + reset)
         elif self.mode == ColorMode.MODE_256:
             gray_weights = np.array([30, 59, 11])
@@ -40,7 +46,7 @@ class ANSIFormatter:
                 for x in range(width):
                     c = self._chars[char_indices[y, x]]
                     g = gray[y, x]
-                    row_chars.append(f"{escape}[38;5;{g}m{c}")
+                    row_chars.append(f"{escape}[38;5;{g}m{prefix}{c}")
                 lines.append("".join(row_chars) + reset)
         else:
             r = colors[:, :, 0]
@@ -54,7 +60,7 @@ class ANSIFormatter:
                 for x in range(width):
                     c = self._chars[char_indices[y, x]]
                     ci = color_idx[y, x]
-                    row_chars.append(f"{escape}[{ci}m{c}")
+                    row_chars.append(f"{escape}[{ci}m{prefix}{c}")
                 lines.append("".join(row_chars) + reset)
 
         return "\n".join(lines)

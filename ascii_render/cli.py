@@ -4,6 +4,9 @@ from typing import Optional
 import shutil
 import time
 import sys
+import select
+import tty
+import termios
 
 from .core.renderer import Renderer
 from .effects.glow import GlowEffect
@@ -36,6 +39,8 @@ def get_terminal_height():
 @click.option("--glow", is_flag=True, help="Enable glow effect")
 @click.option("--glow-radius", default=3, type=int, help="Glow radius")
 @click.option("--glow-intensity", default=0.5, type=float, help="Glow intensity (0-1)")
+@click.option("--highlight", is_flag=True, help="Enable bold/highlight text")
+@click.option("--loop", is_flag=True, help="Loop video playback")
 @click.option("--fps", default=30, type=int, help="Video frame rate")
 @click.option("--output", "-o", type=click.Path(), default=None, help="Output file")
 @click.option(
@@ -53,6 +58,8 @@ def main(
     glow: bool,
     glow_radius: int,
     glow_intensity: float,
+    highlight: bool,
+    loop: bool,
     fps: int,
     output: Optional[str],
     color_mode: str,
@@ -93,7 +100,7 @@ def main(
 
         from .io.ansi import ANSIFormatter
 
-        formatter = ANSIFormatter(config.color_mode, chars)
+        formatter = ANSIFormatter(config.color_mode, chars, highlight=highlight)
 
         frame_iterator = (
             processor.read_gif(str(input_path))
@@ -103,6 +110,11 @@ def main(
 
         if output:
             output_file = open(output, "w")
+            frame_iterator = (
+                processor.read_gif(str(input_path))
+                if is_gif
+                else processor.read_video_frames(str(input_path))
+            )
             for frame in frame_iterator:
                 frame = renderer._preprocess(frame)
                 result = renderer._render_to_ascii(frame)
@@ -112,10 +124,17 @@ def main(
         else:
             sys.stdout.write("\033[?25l\033[2J\033[H")
             sys.stdout.flush()
-            click.echo("Playing... (Ctrl+C to stop)", err=True)
+            click.echo("Playing... (Ctrl+C or q to stop)", err=True)
 
+            old_settings = termios.tcgetattr(sys.stdin)
             try:
+                tty.setcbreak(sys.stdin.fileno())
                 while True:
+                    frame_iterator = (
+                        processor.read_gif(str(input_path))
+                        if is_gif
+                        else processor.read_video_frames(str(input_path))
+                    )
                     for frame in frame_iterator:
                         frame_start = time.time()
 
@@ -133,12 +152,18 @@ def main(
                         if sleep_time > 0:
                             time.sleep(sleep_time)
 
-                    if not is_gif:
+                        if select.select([sys.stdin], [], [], 0)[0]:
+                            if sys.stdin.read(1) == "q":
+                                raise KeyboardInterrupt
+
+                    if not is_gif and not loop:
                         break
             except KeyboardInterrupt:
+                pass
+            finally:
+                termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
                 sys.stdout.write("\033[?25h\033[0m\n")
                 sys.stdout.flush()
-                click.echo(f"Played {frame_count} frames, stopped.")
     else:
         result = renderer.render(str(input_path))
         if output:
