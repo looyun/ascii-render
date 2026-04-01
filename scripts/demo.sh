@@ -2,7 +2,7 @@
 set -e
 
 VERSION=${1:-latest}
-GIF_URL="https://github.com/anomalyco/ascii_render/releases/download/${VERSION}/example.gif"
+GIF_URL="https://github.com/looyun/ascii-render/releases/download/${VERSION}/example.gif"
 
 echo "Downloading ascii-render binary..."
 case "$(uname -s)" in
@@ -12,7 +12,7 @@ case "$(uname -s)" in
     *)          echo "Unsupported OS"; exit 1 ;;
 esac
 
-BINARY_URL="https://github.com/anomalyco/ascii_render/releases/download/${VERSION}/${BINARY}"
+BINARY_URL="https://github.com/looyun/ascii-render/releases/download/${VERSION}/${BINARY}"
 
 mkdir -p temp_ascii_render
 cd temp_ascii_render
