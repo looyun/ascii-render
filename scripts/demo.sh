@@ -2,6 +2,7 @@
 set -e
 
 VERSION=${1:-latest}
+INPUT=${2:-""}
 REPO="looyun/ascii-render"
 
 echo "Downloading ascii-render binary..."
@@ -20,12 +21,15 @@ cd "$TMPDIR"
 curl -fSL -o ascii-render "https://github.com/${REPO}/releases/download/${VERSION}/${BINARY}"
 chmod +x ascii-render
 
-GIF_URL="https://github.com/${REPO}/releases/download/${VERSION}/example.gif"
-echo "Rendering GIF from URL..."
+if [[ -z "$INPUT" ]]; then
+    INPUT="https://raw.githubusercontent.com/${REPO}/master/assets/gif/%E7%88%B1%E4%BD%A0.gif"
+fi
+
+echo "Rendering: $INPUT"
 if [[ "$BINARY" == *"windows"* ]]; then
-    ./ascii-render.exe "$GIF_URL"
+    ./ascii-render.exe "$INPUT"
 else
-    ./ascii-render "$GIF_URL"
+    ./ascii-render "$INPUT"
 fi
 
 echo "Done!"

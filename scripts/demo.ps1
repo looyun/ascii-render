@@ -1,5 +1,6 @@
 param(
-    [string]$Version = "latest"
+    [string]$Version = "latest",
+    [string]$Input = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,9 +11,8 @@ $binary = "ascii-render-windows.exe"
 Write-Host "Downloading ascii-render binary..."
 
 $binaryUrl = "https://github.com/$repo/releases/download/$Version/$binary"
-$gifUrl = "https://github.com/$repo/releases/download/$Version/example.gif"
 
-$tempDir = "temp_ascii_render"
+$tempDir = [System.IO.Path]::GetTempPath() + [System.Guid]::NewGuid().ToString()
 New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
 Set-Location $tempDir
 
@@ -20,8 +20,12 @@ try {
     Write-Host "Downloading binary..."
     Invoke-WebRequest -Uri $binaryUrl -OutFile $binary -UseBasicParsing
 
-    Write-Host "Rendering GIF from URL..."
-    & .\$binary $gifUrl
+    if ([string]::IsNullOrEmpty($Input)) {
+        $Input = "https://raw.githubusercontent.com/$repo/master/assets/gif/%E7%88%B1%E4%BD%A0.gif"
+    }
+
+    Write-Host "Rendering: $Input"
+    & .\$binary $Input
 }
 finally {
     Set-Location ..
