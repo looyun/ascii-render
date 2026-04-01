@@ -55,13 +55,23 @@ def download_if_url(path: str) -> Path:
 @click.option(
     "--height", "-H", default=None, type=int, help="Output height (auto if not set)"
 )
-@click.option("--chars", "-c", default=" .:-=+*#%@", help="Character set for ASCII art")
+@click.option(
+    "--chars",
+    "-c",
+    # default=" .:-=+*#%@",
+    # default=" .'-:_,^=;><+?rc*zLsLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwPKP0dLhpQm@4#B8%$!",
+    default=" .'-:_,^=;><+?rc*zLsLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwPKP0dLhpQm@4#B8%$!",
+    help="Character set for ASCII art",
+)
 @click.option("--invert", "-i", is_flag=True, help="Invert brightness")
 @click.option("--glow", is_flag=True, help="Enable glow effect")
 @click.option("--glow-radius", default=3, type=int, help="Glow radius")
 @click.option("--glow-intensity", default=0.5, type=float, help="Glow intensity (0-1)")
 @click.option("--highlight", is_flag=True, help="Enable bold/highlight text")
 @click.option("--loop", is_flag=True, help="Loop video playback")
+@click.option(
+    "--show-frame", is_flag=True, help="Show frame number in top-right corner"
+)
 @click.option(
     "--fps",
     default=None,
@@ -86,6 +96,7 @@ def main(
     glow_intensity: float,
     highlight: bool,
     loop: bool,
+    show_frame: bool,
     fps: int,
     output: Optional[str],
     color_mode: str,
@@ -188,14 +199,23 @@ def main(
                         if is_gif
                         else processor.read_video_frames(str(input_path))
                     )
+                    frame_num = 0
                     for frame in frame_iterator:
                         frame_start = time.time()
+                        frame_num += 1
 
                         frame = renderer._preprocess(frame)
                         for effect in renderer._effects:
                             frame = effect.apply(frame)
                         result = renderer._render_to_ascii(frame)
                         formatted = formatter.format(result)
+
+                        if show_frame:
+                            lines = formatted.split("\n")
+                            frame_text = f" [{frame_num}]"
+                            if lines:
+                                lines[0] = lines[0] + frame_text
+                            formatted = "\n".join(lines)
 
                         sys.stdout.write("\033[H" + formatted)
                         sys.stdout.flush()

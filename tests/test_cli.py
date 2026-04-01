@@ -13,8 +13,10 @@ def temp_image():
     img = Image.new("RGB", (20, 20), color=(150, 100, 50))
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
         img.save(f.name)
-        yield f.name
-    os.unlink(f.name)
+        temp_path = f.name
+    yield temp_path
+    if os.path.exists(temp_path):
+        os.unlink(temp_path)
 
 
 def test_cli_basic(temp_image):
