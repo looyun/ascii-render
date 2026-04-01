@@ -32,10 +32,7 @@ jobs:
           pip install -e ".[build]"
 
       - name: Build with PyInstaller
-        run: |
-          pyinstaller --onefile --name ${{ matrix.artifact }} \
-            --collect-all ascii_render \
-            run_cli.py
+        run: pyinstaller --onefile --name ${{ matrix.artifact }} --collect-all ascii_render run_cli.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
