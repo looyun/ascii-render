@@ -10,7 +10,6 @@ venv/
 .env
 .venv/
 *.mp4
-*.gif
 *.png
 *.jpg
 *.jpeg
