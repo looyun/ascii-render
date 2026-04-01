@@ -43,7 +43,6 @@ jobs:
         with:
           files: |
             dist/${{ matrix.artifact }}*
-            拿来心心.gif
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
