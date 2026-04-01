@@ -31,14 +31,27 @@ jobs:
         run: |
           pip install -e ".[build]"
 
+      - name: Create entry point script
+        run: |
+          cat > run_cli.py << 'EOF'
+          #!/usr/bin/env python3
+          import sys
+          from ascii_render.cli import main
+          if __name__ == "__main__":
+              sys.exit(main())
+          EOF
+
       - name: Build with PyInstaller
         run: |
           pyinstaller --onefile --name ${{ matrix.artifact }} \
             --collect-all ascii_render \
-            ascii_render/cli.py
+            run_cli.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           path: dist/${{ matrix.artifact }}*
+
+      - name: Clean up
+        run: rm -f run_cli.py
