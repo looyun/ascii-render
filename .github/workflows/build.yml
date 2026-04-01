@@ -34,7 +34,16 @@ jobs:
       - name: Build with PyInstaller
         run: pyinstaller --onefile --name ${{ matrix.artifact }} --collect-all ascii_render run_cli.py
 
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ matrix.artifact }}*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload artifact
+        if: github.event_name != 'release'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
