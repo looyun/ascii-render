@@ -20,11 +20,8 @@ try {
     Write-Host "Downloading binary..."
     Invoke-WebRequest -Uri $binaryUrl -OutFile $binary -UseBasicParsing
 
-    Write-Host "Downloading example GIF..."
-    Invoke-WebRequest -Uri $gifUrl -OutFile example.gif -UseBasicParsing
-
-    Write-Host "Rendering GIF..."
-    & .\$binary example.gif
+    Write-Host "Rendering GIF from URL..."
+    & .\$binary $gifUrl
 }
 finally {
     Set-Location ..

@@ -12,21 +12,20 @@ case "$(uname -s)" in
     *)          echo "Unsupported OS"; exit 1 ;;
 esac
 
-mkdir -p temp_ascii_render
-cd temp_ascii_render
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
 
-curl -sL -o ascii-render "https://github.com/${REPO}/releases/download/${VERSION}/${BINARY}"
-curl -sL -o example.gif "https://github.com/${REPO}/releases/download/${VERSION}/example.gif"
+cd "$TMPDIR"
 
+curl -fSL -o ascii-render "https://github.com/${REPO}/releases/download/${VERSION}/${BINARY}"
 chmod +x ascii-render
 
-echo "Rendering GIF..."
+GIF_URL="https://github.com/${REPO}/releases/download/${VERSION}/example.gif"
+echo "Rendering GIF from URL..."
 if [[ "$BINARY" == *"windows"* ]]; then
-    ./ascii-render.exe example.gif
+    ./ascii-render.exe "$GIF_URL"
 else
-    ./ascii-render example.gif
+    ./ascii-render "$GIF_URL"
 fi
 
-echo "Done! Cleanup..."
-cd ..
-rm -rf temp_ascii_render
+echo "Done!"
