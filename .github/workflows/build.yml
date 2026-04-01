@@ -31,16 +31,6 @@ jobs:
         run: |
           pip install -e ".[build]"
 
-      - name: Create entry point script
-        run: |
-          cat > run_cli.py << 'EOF'
-          #!/usr/bin/env python3
-          import sys
-          from ascii_render.cli import main
-          if __name__ == "__main__":
-              sys.exit(main())
-          EOF
-
       - name: Build with PyInstaller
         run: |
           pyinstaller --onefile --name ${{ matrix.artifact }} \
@@ -54,4 +44,4 @@ jobs:
           path: dist/${{ matrix.artifact }}*
 
       - name: Clean up
-        run: rm -f run_cli.py
+        run: del run_cli.py 2>NUL || true
