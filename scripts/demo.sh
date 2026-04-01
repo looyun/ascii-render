@@ -2,7 +2,7 @@
 set -e
 
 VERSION=${1:-latest}
-GIF_URL="https://github.com/looyun/ascii-render/releases/download/${VERSION}/example.gif"
+REPO="looyun/ascii-render"
 
 echo "Downloading ascii-render binary..."
 case "$(uname -s)" in
@@ -12,13 +12,11 @@ case "$(uname -s)" in
     *)          echo "Unsupported OS"; exit 1 ;;
 esac
 
-BINARY_URL="https://github.com/looyun/ascii-render/releases/download/${VERSION}/${BINARY}"
-
 mkdir -p temp_ascii_render
 cd temp_ascii_render
 
-curl -sL -o ascii-render "$BINARY_URL"
-curl -sL -o example.gif "$GIF_URL"
+curl -sL -o ascii-render "https://github.com/${REPO}/releases/download/${VERSION}/${BINARY}"
+curl -sL -o example.gif "https://github.com/${REPO}/releases/download/${VERSION}/example.gif"
 
 chmod +x ascii-render
 

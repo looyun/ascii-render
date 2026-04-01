@@ -4,13 +4,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "Downloading ascii-render binary..."
-
-$os = "windows"
+$repo = "looyun/ascii-render"
 $binary = "ascii-render-windows.exe"
 
-$binaryUrl = "https://github.com/looyun/ascii-render/releases/download/$Version/$binary"
-$gifUrl = "https://github.com/looyun/ascii-render/releases/download/$Version/example.gif"
+Write-Host "Downloading ascii-render binary..."
+
+$binaryUrl = "https://github.com/$repo/releases/download/$Version/$binary"
+$gifUrl = "https://github.com/$repo/releases/download/$Version/example.gif"
 
 $tempDir = "temp_ascii_render"
 New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
