@@ -18,7 +18,7 @@ trap 'rm -rf "$TMPDIR"' EXIT
 
 cd "$TMPDIR"
 
-curl -fSL -o ascii-render "https://github.com/${REPO}/releases/download/${VERSION}/${BINARY}"
+curl -fSL -o ascii-render "https://github.com/${REPO}/releases/latest/download/${BINARY}"
 chmod +x ascii-render
 
 if [[ -z "$INPUT" ]]; then
