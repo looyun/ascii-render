@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-VERSION=${1:-latest}
 INPUT=${2:-""}
 REPO="looyun/ascii-render"
 

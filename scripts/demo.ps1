@@ -1,5 +1,4 @@
 param(
-    [string]$Version = "latest",
     [string]$Img = ""
 )
 
