@@ -5,11 +5,18 @@ import shutil
 import time
 import sys
 import select
-import tty
-import termios
 import urllib.request
 import tempfile
 import os
+import platform
+
+try:
+    import tty
+    import termios
+
+    HAS_TERMIO = True
+except ImportError:
+    HAS_TERMIO = False
 
 from .core.renderer import Renderer
 from .effects.glow import GlowEffect
@@ -173,16 +180,17 @@ def main(
             if temp_file and os.path.exists(temp_file):
                 os.remove(temp_file)
         else:
-            sys.stdout.write("\033[?25l")
-            sys.stdout.flush()
-            click.echo("Playing... (Ctrl+C or q to stop)", err=True)
+            if HAS_TERMIO and platform.system() != "Windows":
+                sys.stdout.write("\033[?25l")
+                sys.stdout.flush()
+                click.echo("Playing... (Ctrl+C or q to stop)", err=True)
 
-            old_settings = termios.tcgetattr(sys.stdin)
-            try:
+                old_settings = termios.tcgetattr(sys.stdin)
                 tty.setcbreak(sys.stdin.fileno())
                 sys.stdout.write("\033[2J\033[H\033[?25l")
                 sys.stdout.flush()
 
+            try:
                 while True:
                     current_width = shutil.get_terminal_size().columns
                     current_height = shutil.get_terminal_size().lines
@@ -234,7 +242,8 @@ def main(
             except KeyboardInterrupt:
                 pass
             finally:
-                termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+                if HAS_TERMIO and platform.system() != "Windows":
+                    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
                 sys.stdout.write("\033[?25h\033[0m\n")
                 sys.stdout.flush()
                 if temp_file and os.path.exists(temp_file):
