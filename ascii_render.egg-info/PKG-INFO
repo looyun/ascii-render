@@ -10,3 +10,5 @@ Requires-Dist: click>=8.0.0
 Provides-Extra: dev
 Requires-Dist: pytest>=7.0.0; extra == "dev"
 Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Provides-Extra: build
+Requires-Dist: pyinstaller>=6.0.0; extra == "build"
