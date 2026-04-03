@@ -21,9 +21,6 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "opencv-python-headless" },
     { name = "pillow" },
 ]
 
@@ -35,18 +32,20 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
 ]
+video = [
+    { name = "opencv-python-headless" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.0.0" },
-    { name = "numpy", specifier = ">=1.24.0" },
-    { name = "opencv-python-headless", specifier = ">=4.8.0" },
+    { name = "opencv-python-headless", marker = "extra == 'video'", specifier = ">=4.8.0" },
     { name = "pillow", specifier = ">=10.0.0" },
     { name = "pyinstaller", marker = "extra == 'build'", specifier = ">=6.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
 ]
-provides-extras = ["dev", "build"]
+provides-extras = ["video", "dev", "build"]
 
 [[package]]
 name = "click"

@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Protocol
 from enum import Enum
 from PIL import Image
-import numpy as np
 
 
 class ColorMode(Enum):
@@ -23,8 +22,8 @@ class RenderConfig:
 
 @dataclass
 class RenderResult:
-    char_indices: np.ndarray
-    colors: np.ndarray
+    char_indices: list[list[int]]
+    colors: list[list[tuple[int, int, int]]]
     dimensions: tuple[int, int]
 
 

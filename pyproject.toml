@@ -9,17 +9,16 @@ description = "Render images/videos to colored ASCII art with glow effects"
 requires-python = ">=3.10"
 dependencies = [
     "pillow>=10.0.0",
-    "numpy>=1.24.0",
-    "opencv-python-headless>=4.8.0",
     "click>=8.0.0",
 ]
 
-[project.scripts]
-ascii-render = "ascii_render.cli:main"
-
 [project.optional-dependencies]
+video = ["opencv-python-headless>=4.8.0"]
 dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
 build = ["pyinstaller>=6.0.0"]
+
+[project.scripts]
+ascii-render = "ascii_render.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["ascii_render*"]

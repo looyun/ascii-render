@@ -1,6 +1,5 @@
 import pytest
 from PIL import Image
-import numpy as np
 import tempfile
 import os
 

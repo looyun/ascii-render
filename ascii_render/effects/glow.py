@@ -1,5 +1,4 @@
-import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageChops
 from ..core.effects import Effect
 
 
@@ -10,26 +9,11 @@ class GlowEffect(Effect):
         self.threshold = threshold
 
     def apply(self, image: Image.Image) -> Image.Image:
-        img_array = np.array(image).astype(np.float32) / 255.0
-        brightness = np.mean(img_array, axis=2)
-
-        mask = brightness > self.threshold
+        gray = image.convert("L")
+        mask = gray.point(lambda p: 255 if p / 255.0 > self.threshold else 0)
 
         blurred = image.filter(ImageFilter.GaussianBlur(radius=self.radius))
-        blur_array = np.array(blurred).astype(np.float32) / 255.0
 
-        result = img_array.copy()
-        for c in range(3):
-            result[:, :, c] = np.where(
-                mask,
-                np.clip(
-                    img_array[:, :, c]
-                    + (blur_array[:, :, c] - img_array[:, :, c]) * self.intensity,
-                    0,
-                    1,
-                ),
-                img_array[:, :, c],
-            )
+        glow = Image.blend(image, blurred, self.intensity)
 
-        result = np.clip(result * 255, 0, 255).astype(np.uint8)
-        return Image.fromarray(result)
+        return Image.composite(glow, image, mask.convert("1"))

@@ -1,4 +1,3 @@
-import numpy as np
 from ..types import ColorMode, RenderResult
 
 
@@ -33,33 +32,34 @@ class ANSIFormatter:
             for y in range(height):
                 row_chars = []
                 for x in range(width):
-                    r, g, b = colors[y, x]
-                    c = self._chars[char_indices[y, x]]
+                    r, g, b = colors[y][x]
+                    c = self._chars[char_indices[y][x]]
                     row_chars.append(f"{escape}[38;2;{r};{g};{b}m{prefix}{c}")
                 lines.append("".join(row_chars) + reset)
         elif self.mode == ColorMode.MODE_256:
-            gray_weights = np.array([30, 59, 11])
-            gray = np.dot(colors[:, :, :3], gray_weights) // 100
-            gray = np.minimum(232 + gray, 255).astype(np.int32)
             for y in range(height):
                 row_chars = []
                 for x in range(width):
-                    c = self._chars[char_indices[y, x]]
-                    g = gray[y, x]
-                    row_chars.append(f"{escape}[38;5;{g}m{prefix}{c}")
+                    r, g, b = colors[y][x]
+                    gray = (30 * r + 59 * g + 11 * b) // 100
+                    code = min(232 + gray, 255)
+                    c = self._chars[char_indices[y][x]]
+                    row_chars.append(f"{escape}[38;5;{code}m{prefix}{c}")
                 lines.append("".join(row_chars) + reset)
         else:
-            r = colors[:, :, 0]
-            g = colors[:, :, 1]
-            b = colors[:, :, 2]
-            color_idx = 30 + np.where(
-                r > 128, 1, np.where(g > 128, 4, np.where(b > 128, 2, 0))
-            )
             for y in range(height):
                 row_chars = []
                 for x in range(width):
-                    c = self._chars[char_indices[y, x]]
-                    ci = color_idx[y, x]
+                    r, g, b = colors[y][x]
+                    if r > 128:
+                        ci = 31
+                    elif g > 128:
+                        ci = 34
+                    elif b > 128:
+                        ci = 32
+                    else:
+                        ci = 30
+                    c = self._chars[char_indices[y][x]]
                     row_chars.append(f"{escape}[{ci}m{prefix}{c}")
                 lines.append("".join(row_chars) + reset)
 

@@ -1,5 +1,4 @@
 from PIL import Image
-import numpy as np
 from typing import List, Optional
 
 from ..types import RenderConfig, RenderResult, Effect
@@ -55,19 +54,43 @@ class Renderer:
         return image.convert("RGB")
 
     def _render_to_ascii(self, image: Image.Image) -> RenderResult:
-        img_array = np.array(image)
-        height, width = img_array.shape[:2]
-
-        brightness = np.mean(img_array, axis=2, dtype=np.float32) * (1.0 / 255.0)
-
-        if self.config.invert:
-            brightness = 1.0 - brightness
+        width, height = image.size
+        gray = image.convert("L")
+        gray_pixels = list(gray.get_flattened_data())
 
         num_chars = len(self.config.char_set)
+        scale = num_chars / 255.0
 
-        char_indices = (brightness * num_chars).astype(np.int32)
-        np.clip(char_indices, 0, num_chars - 1, out=char_indices)
+        if self.config.invert:
+            char_indices = []
+            for y in range(height):
+                row = []
+                for x in range(width):
+                    brightness = 1.0 - gray_pixels[y * width + x] / 255.0
+                    idx = int(brightness * num_chars)
+                    idx = max(0, min(idx, num_chars - 1))
+                    row.append(idx)
+                char_indices.append(row)
+        else:
+            char_indices = []
+            for y in range(height):
+                row = []
+                for x in range(width):
+                    brightness = gray_pixels[y * width + x] * scale
+                    idx = int(brightness)
+                    idx = max(0, min(idx, num_chars - 1))
+                    row.append(idx)
+                char_indices.append(row)
+
+        colors = []
+        rgb_pixels = list(image.get_flattened_data())
+        for y in range(height):
+            row = []
+            for x in range(width):
+                r, g, b = rgb_pixels[y * width + x]
+                row.append((r, g, b))
+            colors.append(row)
 
         return RenderResult(
-            char_indices=char_indices, colors=img_array, dimensions=(width, height)
+            char_indices=char_indices, colors=colors, dimensions=(width, height)
         )

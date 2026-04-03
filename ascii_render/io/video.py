@@ -1,6 +1,5 @@
 from PIL import Image
-from typing import Iterator, Union, Optional
-import numpy as np
+from typing import Iterator, Optional
 
 
 class VideoProcessor:
@@ -35,7 +34,6 @@ class VideoProcessor:
         if not frames:
             return
 
-        # Find transparency index from any frame that has it
         trans_index = None
         for f in frames:
             if f.mode == "P" and "transparency" in f.info:
@@ -46,11 +44,12 @@ class VideoProcessor:
             if f.mode == "P":
                 f = f.convert("RGBA")
 
-                # Apply transparency fix to frames that don't have it in their info
                 if trans_index is not None and i > 0:
-                    arr = np.array(f)
-                    arr[arr[:, :, 3] == 255, 3] = 0
-                    f = Image.fromarray(arr, "RGBA")
+                    alpha = f.split()[3]
+                    alpha = alpha.point(lambda p: 0 if p == 255 else p)
+                    channels = list(f.split())
+                    channels[3] = alpha
+                    f = Image.merge("RGBA", channels)
 
             yield f
 
@@ -71,7 +70,10 @@ class VideoProcessor:
         try:
             import cv2
         except ImportError:
-            raise ImportError("opencv-python is required for video processing")
+            raise ImportError(
+                "opencv-python-headless is required for video processing. "
+                "Install it with: pip install ascii_render[video]"
+            )
 
         cap = cv2.VideoCapture(path)
         if not cap.isOpened():
