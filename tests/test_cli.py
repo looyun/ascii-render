@@ -5,7 +5,8 @@ import os
 from unittest.mock import patch
 from PIL import Image
 
-from ascii_render.cli import main, get_terminal_width, get_terminal_height
+from ascii_render.cli.main import main
+from ascii_render.cli.utils import get_terminal_width, get_terminal_height
 
 
 @pytest.fixture
@@ -57,7 +58,7 @@ def test_get_terminal_height():
 
 def test_cli_auto_width_detection(temp_image):
     runner = CliRunner()
-    with patch("ascii_render.cli.get_terminal_width", return_value=120):
+    with patch("ascii_render.cli.render_cmd.get_terminal_width", return_value=120):
         result = runner.invoke(main, ["render", temp_image])
     assert result.exit_code == 0
     assert len(result.output) > 0
