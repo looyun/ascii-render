@@ -1,7 +1,6 @@
-from dataclasses import dataclass, field
-from typing import List, Optional, Protocol
+from dataclasses import dataclass
+from typing import Optional
 from enum import Enum
-from PIL import Image
 
 
 class ColorMode(Enum):
@@ -25,9 +24,3 @@ class RenderResult:
     char_indices: list[list[int]]
     colors: list[list[tuple[int, int, int]]]
     dimensions: tuple[int, int]
-
-
-class Effect(Protocol):
-    def apply(self, image: Image.Image) -> Image.Image:
-        """Apply effect to image and return modified image."""
-        ...
