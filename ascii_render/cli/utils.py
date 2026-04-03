@@ -1,7 +1,6 @@
 """CLI utility functions."""
 
 import os
-import platform
 import select
 import shutil
 import sys
@@ -20,7 +19,6 @@ except ImportError:
     HAS_TERMIO = False
 
 from ascii_render.core.renderer import Renderer
-from ascii_render.types import RenderConfig, RenderResult
 from ascii_render.io.ansi import ANSIFormatter
 from ascii_render.io.video import VideoProcessor
 

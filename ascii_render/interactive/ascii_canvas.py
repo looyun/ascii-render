@@ -4,8 +4,6 @@ Caches pre-rendered frames for static images. Supports GIF animation with
 frame iteration.
 """
 
-import os
-import sys
 import time
 from typing import Optional, Iterator
 

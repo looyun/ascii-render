@@ -3,7 +3,6 @@
 import os
 import sys
 import time
-from pathlib import Path
 
 import click
 from PIL import Image
