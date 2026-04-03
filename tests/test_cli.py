@@ -21,14 +21,14 @@ def temp_image():
 
 def test_cli_basic(temp_image):
     runner = CliRunner()
-    result = runner.invoke(main, [temp_image, "--width", "20"])
+    result = runner.invoke(main, ["render", temp_image, "--width", "20"])
     assert result.exit_code == 0
     assert len(result.output) > 0
 
 
 def test_cli_with_glow(temp_image):
     runner = CliRunner()
-    result = runner.invoke(main, [temp_image, "--width", "20", "--glow"])
+    result = runner.invoke(main, ["render", temp_image, "--width", "20", "--glow"])
     assert result.exit_code == 0
 
 
@@ -36,7 +36,9 @@ def test_cli_output_file(temp_image):
     runner = CliRunner()
     with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
         output_path = f.name
-    result = runner.invoke(main, [temp_image, "--width", "20", "--output", output_path])
+    result = runner.invoke(
+        main, ["render", temp_image, "--width", "20", "--output", output_path]
+    )
     os.unlink(output_path)
     assert result.exit_code == 0
 
@@ -56,6 +58,6 @@ def test_get_terminal_height():
 def test_cli_auto_width_detection(temp_image):
     runner = CliRunner()
     with patch("ascii_render.cli.get_terminal_width", return_value=120):
-        result = runner.invoke(main, [temp_image])
+        result = runner.invoke(main, ["render", temp_image])
     assert result.exit_code == 0
     assert len(result.output) > 0
