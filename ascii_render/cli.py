@@ -233,9 +233,10 @@ def main(
                         if sleep_time > 0:
                             time.sleep(sleep_time)
 
-                        if select.select([sys.stdin], [], [], 0)[0]:
-                            if sys.stdin.read(1) == "q":
-                                raise KeyboardInterrupt
+                        if platform.system() != "Windows":
+                            if select.select([sys.stdin], [], [], 0)[0]:
+                                if sys.stdin.read(1) == "q":
+                                    raise KeyboardInterrupt
 
                     if not is_gif and not loop:
                         break
