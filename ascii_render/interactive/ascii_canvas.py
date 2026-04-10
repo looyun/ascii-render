@@ -37,6 +37,7 @@ class AsciiArtCanvas(MouseCanvas):
                      provided but delay is None).
         loop: Whether to loop GIF playback.
         term_size: Explicit terminal ``(cols, rows)`` for testing.
+        drag_mode: If True, enable drag-to-move interaction.
     """
 
     def __init__(
@@ -48,6 +49,7 @@ class AsciiArtCanvas(MouseCanvas):
         frame_delay: Optional[float] = None,
         loop: bool = True,
         term_size: Optional[tuple[int, int]] = None,
+        drag_mode: bool = False,
     ):
         self._config = config or RenderConfig(
             width=size * 2,
@@ -76,7 +78,7 @@ class AsciiArtCanvas(MouseCanvas):
 
         self._current_frame = init_image
 
-        super().__init__(size=size, term_size=term_size)
+        super().__init__(size=size, term_size=term_size, drag_mode=drag_mode)
 
     # -- GIF support --
 

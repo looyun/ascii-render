@@ -17,7 +17,7 @@ from ascii_render.cli.utils import download_if_url
 @click.command()
 @click.argument("input")
 @click.option(
-    "--size", "-s", default=20, type=int, help="Canvas short-side size in rows"
+    "--size", "-s", default=30, type=int, help="Canvas short-side size in rows"
 )
 @click.option(
     "--chars",
@@ -36,6 +36,7 @@ from ascii_render.cli.utils import download_if_url
     help="Color mode",
 )
 @click.option("--loop/--no-loop", default=True, help="Loop GIF playback")
+@click.option("--drag", is_flag=True, help="Enable drag mode (click and drag canvas)")
 def interactive(
     input: str,
     size: int,
@@ -46,6 +47,7 @@ def interactive(
     glow_intensity: float,
     color_mode: str,
     loop: bool,
+    drag: bool,
 ):
     """Render an image or GIF as interactive ASCII art that follows mouse clicks."""
     input_path = download_if_url(input)
@@ -70,7 +72,9 @@ def interactive(
     )
 
     if is_gif:
-        canvas = AsciiArtCanvas(image=image, size=size, config=config, loop=loop)
+        canvas = AsciiArtCanvas(
+            image=image, size=size, config=config, loop=loop, drag_mode=drag
+        )
         canvas.set_gif(str(input_path))
     elif glow:
         renderer = Renderer(config)
@@ -78,9 +82,11 @@ def interactive(
         processed = renderer._preprocess(image)
         for effect in renderer._effects:
             processed = effect.apply(processed)
-        canvas = AsciiArtCanvas(image=processed, size=size, config=config)
+        canvas = AsciiArtCanvas(
+            image=processed, size=size, config=config, drag_mode=drag
+        )
     else:
-        canvas = AsciiArtCanvas(image=image, size=size, config=config)
+        canvas = AsciiArtCanvas(image=image, size=size, config=config, drag_mode=drag)
 
     try:
         canvas.start()
