@@ -9,10 +9,14 @@ This is an ASCII renderer library that converts images and videos to colored ASC
 ### Development Environment
 
 ```bash
-# Activate virtual environment
-source venv/bin/activate
-# Or with uv
+# Using uv (recommended)
 uv sync
+
+# Or using pip with virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+# venv\Scripts\activate  # Windows
+pip install -e ".[dev]"
 ```
 
 ### Build & Install
@@ -121,14 +125,14 @@ class Effect(Protocol):
 - Use type hints for all parameters and return values
 
 ```python
-def render(self, image_path: str) -> str:
+def render(self, image_path: str) -> RenderResult:
     """Render an image to ASCII art.
-    
+
     Args:
         image_path: Path to the image file.
-        
+
     Returns:
-        ANSI-escaped ASCII art string.
+        RenderResult containing char indices, colors, and dimensions.
     """
 ```
 
@@ -216,29 +220,47 @@ def test_renderer_basic():
         renderer = Renderer(RenderConfig(width=10))
         result = renderer.render(f.name)
         os.unlink(f.name)
-        assert len(result) > 0
+        assert result.dimensions == (10, 5)
 ```
 
 ## File Structure
 
 ```
 ascii_render/
-├── __init__.py          # Public API exports
-├── cli.py               # Command-line interface
-├── types.py             # Type definitions, enums, dataclasses
-├── core/
-│   ├── renderer.py      # Main renderer class
-│   └── effects.py       # Effect protocol
-├── effects/
-│   └── glow.py          # Glow effect implementation
-└── io/
-    ├── ansi.py          # ANSI color formatting
-    ├── loader.py        # Image loading
-    └── video.py         # Video/GIF processing
+├── __init__.py              # Public API exports
+├── __main__.py              # Module entry point (`python -m ascii_render`)
+├── types.py                 # Type definitions, enums, dataclasses
+├── cli/                     # Command-line interface package
+│   ├── __init__.py
+│   ├── main.py              # CLI entry point (Click group)
+│   ├── render_cmd.py        # `render` subcommand
+│   ├── interactive_cmd.py   # `interactive` subcommand
+│   └── utils.py             # CLI utilities (terminal size, video playback)
+├── core/                    # Core rendering logic
+│   ├── __init__.py
+│   ├── renderer.py          # Main renderer class
+│   ├── effects.py           # Effect protocol
+│   ├── pixel_mapper.py      # Pixel-to-ASCII mapping
+│   └── image_utils.py       # Image preprocessing helpers
+├── effects/                 # Built-in effects
+│   ├── __init__.py
+│   └── glow.py              # Glow effect implementation
+├── interactive/             # Interactive terminal canvas
+│   ├── __init__.py
+│   ├── ascii_canvas.py      # ASCII art canvas with GIF support
+│   └── mouse_canvas.py      # Mouse-driven animated canvas
+└── io/                      # Input/output utilities
+    ├── __init__.py
+    ├── ansi.py              # ANSI color formatting
+    ├── loader.py            # Image loading
+    └── video.py             # Video/GIF processing
 
 tests/
-├── test_renderer.py
+├── __init__.py
+├── test_cli.py
+├── test_core.py
 ├── test_effects.py
+├── test_interactive.py
 ├── test_io.py
-└── test_cli.py
+└── test_renderer.py
 ```

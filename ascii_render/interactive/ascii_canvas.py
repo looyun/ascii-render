@@ -4,8 +4,6 @@ Caches pre-rendered frames for static images. Supports GIF animation with
 frame iteration.
 """
 
-import os
-import sys
 import time
 from typing import Optional, Iterator
 
@@ -13,6 +11,9 @@ from PIL import Image
 
 from ascii_render.types import RenderConfig
 from ascii_render.interactive.mouse_canvas import MouseCanvas
+from ascii_render.core.pixel_mapper import map_pixels_to_ascii
+from ascii_render.core.image_utils import preprocess_image
+from ascii_render.io.ansi import ANSIFormatter
 
 _ESC = "\033"
 _RESET = f"{_ESC}[0m"
@@ -21,9 +22,8 @@ _RESET = f"{_ESC}[0m"
 class AsciiArtCanvas(MouseCanvas):
     """A MouseCanvas that renders an image as colored ASCII art.
 
-    Rendering uses NumPy vectorized operations for performance. For static
-    images the output is pre-rendered once and cached. For GIFs, frames are
-    rendered on-the-fly with NumPy and iterated at the GIF's native FPS.
+    For static images the output is pre-rendered once and cached. For GIFs,
+    frames are rendered on-the-fly and iterated at the GIF's native FPS.
 
     The canvas size (in terminal cells) determines the ASCII render resolution.
     When the terminal resizes the canvas re-centers but keeps its configured
@@ -38,6 +38,7 @@ class AsciiArtCanvas(MouseCanvas):
                      provided but delay is None).
         loop: Whether to loop GIF playback.
         term_size: Explicit terminal ``(cols, rows)`` for testing.
+        drag_mode: If True, enable drag-to-move interaction.
     """
 
     def __init__(
@@ -49,15 +50,16 @@ class AsciiArtCanvas(MouseCanvas):
         frame_delay: Optional[float] = None,
         loop: bool = True,
         term_size: Optional[tuple[int, int]] = None,
+        drag_mode: bool = False,
     ):
         self._config = config or RenderConfig(
             width=size * 2,
             height=size,
             preserve_aspect=False,
         )
-        self._chars = list(self._config.char_set)
-        self._num_chars = len(self._chars)
-        self._invert = self._config.invert
+        self._formatter = ANSIFormatter(
+            self._config.color_mode, self._config.char_set
+        )
 
         # Frame management
         self._frames = frames
@@ -78,21 +80,17 @@ class AsciiArtCanvas(MouseCanvas):
 
         self._current_frame = init_image
 
-        super().__init__(size=size, term_size=term_size)
+        super().__init__(size=size, term_size=term_size, drag_mode=drag_mode)
 
     # -- GIF support --
 
     def set_gif(self, path: str):
-        """Load a GIF for animated playback.
-
-        Opens the GIF, extracts frames, and sets up frame iteration.
-        """
+        """Load a GIF for animated playback."""
         from ascii_render.io.video import VideoProcessor
 
         self._gif_path = path
         self._frames = VideoProcessor.read_gif(path)
 
-        # Get FPS from GIF metadata
         if self._frame_delay is None:
             fps = VideoProcessor.get_gif_info(path)
             if fps:
@@ -100,7 +98,6 @@ class AsciiArtCanvas(MouseCanvas):
             else:
                 self._frame_delay = 0.1
 
-        # Read first frame
         try:
             frame = next(self._frames)
             self._current_frame = self._prepare_image(frame, self.cols, self.rows)
@@ -143,12 +140,7 @@ class AsciiArtCanvas(MouseCanvas):
         self, image: Image.Image, width: int, height: int
     ) -> Image.Image:
         """Resize and convert image to RGB."""
-        img = image.resize((width, height))
-        if img.mode == "RGBA":
-            bg = Image.new("RGB", img.size, (0, 0, 0))
-            bg.paste(img, mask=img.split()[3])
-            return bg
-        return img.convert("RGB")
+        return preprocess_image(image, width, height, preserve_aspect=False)
 
     def _render_frame_to_ascii(
         self, image: Image.Image, rows: Optional[int] = None, cols: Optional[int] = None
@@ -157,26 +149,13 @@ class AsciiArtCanvas(MouseCanvas):
         r = rows or self.rows
         c = cols or self.cols
 
-        pixels = image.convert("RGB").load()
-        gray_img = image.convert("L").load()
-        w, h = image.size
+        result = map_pixels_to_ascii(image, self._config.char_set, self._config.invert)
+        formatted = self._formatter.format(result)
+        lines = formatted.split("\n")
 
-        lines: list[str] = []
-        for y in range(h):
-            parts: list[str] = []
-            for x in range(w):
-                gray = gray_img[x, y] / 255.0
-                if self._invert:
-                    gray = 1.0 - gray
-                idx = int(gray * self._num_chars)
-                if idx < 0:
-                    idx = 0
-                elif idx >= self._num_chars:
-                    idx = self._num_chars - 1
-                ch = self._chars[idx]
-                red, green, blue = pixels[x, y][:3]
-                parts.append(f"{_ESC}[38;2;{red};{green};{blue}m{ch}")
-            lines.append("".join(parts) + _RESET)
+        # Ensure row count matches canvas in case formatter behavior changes
+        if len(lines) != r:
+            lines = lines[:r] + [""] * (r - len(lines))
 
         return lines
 
@@ -199,6 +178,5 @@ class AsciiArtCanvas(MouseCanvas):
     def update(self):
         """Advance animation state and poll mouse input."""
         super().update()
-        # Pre-render ASCII for next frame if static (avoid doing it in draw)
         if self._frames is None and not self._gif_path and not self._static_ascii:
             self._static_ascii = self._render_frame_to_ascii(self._current_frame)

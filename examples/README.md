@@ -8,21 +8,21 @@
 
 ```bash
 # 默认示例（爱你.gif）
-bash <(curl -sL https://raw.githubusercontent.com/looyun/ascii-render/master/scripts/demo.sh)
+bash <(curl -sL https://raw.githubusercontent.com/looyun/ascii-render/master/examples/demo.sh)
 
 # 指定输入
-bash <(curl -sL https://raw.githubusercontent.com/looyun/ascii-render/master/scripts/demo.sh) /path/to/image.gif
+bash <(curl -sL https://raw.githubusercontent.com/looyun/ascii-render/master/examples/demo.sh) /path/to/image.gif
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
 # 默认示例（爱你.gif）
-irm https://raw.githubusercontent.com/looyun/ascii-render/master/scripts/demo.ps1 | iex
+irm https://raw.githubusercontent.com/looyun/ascii-render/master/examples/demo.ps1 | iex
 
 # 指定输入
 $img = "https://example.com/love.gif"
-irm https://raw.githubusercontent.com/looyun/ascii-render/master/scripts/demo.ps1 | iex -Img $img
+irm https://raw.githubusercontent.com/looyun/ascii-render/master/examples/demo.ps1 | iex -Img $img
 ```
 
 

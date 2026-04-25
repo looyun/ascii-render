@@ -15,10 +15,18 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact: ascii-render-linux
+            upx_install: sudo apt-get update && sudo apt-get install -y upx-ucl
           - os: macos-latest
             artifact: ascii-render-macos
+            upx_install: brew install upx
           - os: windows-latest
             artifact: ascii-render-windows.exe
+            upx_install: |
+              $url = "https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-win64.zip"
+              Invoke-WebRequest -Uri $url -OutFile upx.zip -UseBasicParsing
+              Expand-Archive -Path upx.zip -DestinationPath .
+              $upxDir = (Get-ChildItem -Directory -Filter "upx-*").FullName
+              echo "$upxDir" | Out-File -FilePath $env:GITHUB_PATH -Append
 
     runs-on: ${{ matrix.os }}
 
@@ -30,12 +38,16 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install UPX
+        run: ${{ matrix.upx_install }}
+
       - name: Install dependencies
-        run: |
-          pip install -e ".[build]"
+        run: pip install -e ".[build]"
 
       - name: Build with PyInstaller
-        run: pyinstaller --onefile --name ${{ matrix.artifact }} --collect-all ascii_render run_cli.py
+        env:
+          PYINSTALLER_NAME: ${{ matrix.artifact }}
+        run: pyinstaller --clean build.spec
 
       - name: Upload to Release
         if: github.event_name == 'release'
@@ -52,6 +64,3 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: dist/${{ matrix.artifact }}*
-
-      - name: Clean up
-        run: del run_cli.py 2>NUL || true

@@ -1,20 +1,57 @@
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.egg-info
-.eggs/
-dist/
+*.py[cod]
+*$py.class
+*.so
+.Python
 build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
 *.egg
+
+# Virtual environments
 venv/
-.env
 .venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Ruff
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Package managers
+uv.lock
+
+# Project specific
+.env
 *.mp4
 *.png
 *.jpg
 *.jpeg
-.idea/
-.vscode/
-.pytest_cache/
-.coverage
-htmlcov/

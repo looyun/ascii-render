@@ -4,54 +4,55 @@ from typing import Iterator, Optional
 
 class VideoProcessor:
     @staticmethod
+    def _find_gif_transparency_index(path: str) -> Optional[int]:
+        """Scan GIF frames to find a shared transparency palette index."""
+        img = Image.open(path)
+        try:
+            while True:
+                if img.mode == "P" and "transparency" in img.info:
+                    return img.info["transparency"]
+                img.seek(img.tell() + 1)
+        except EOFError:
+            pass
+        return None
+
+    @staticmethod
     def read_gif(path: str) -> Iterator[Image.Image]:
         """
-        Read GIF frames and yield them as images.
+        Read GIF frames and yield them as images in a streaming fashion.
 
         Note: Some GIFs (especially those created by certain tools) only have the
         'transparency' field in the first frame's info, even though all frames use
         the same transparent color. Pillow only applies transparency handling to
         frames that have this field in their info dict.
 
-        For example, if frame 0 has transparency=255 (palette index 255 is transparent),
-        but subsequent frames don't have 'transparency' in their info, Pillow will:
-        - Frame 0: Correctly treat palette index 255 as transparent
-        - Frame 1+: NOT treat any pixels as transparent, causing the background to
-                   appear different (solid white instead of transparent)
-
         This fix extracts the transparency index from any frame that has it, then
         applies the same logic to all subsequent frames during RGBA conversion.
         """
+        trans_index = VideoProcessor._find_gif_transparency_index(path)
+
         img = Image.open(path)
-        frames = []
+        frame_index = 0
         try:
             while True:
-                frames.append(img.copy())
+                frame = img.copy()
+
+                if frame.mode == "P":
+                    frame = frame.convert("RGBA")
+
+                    if trans_index is not None and frame_index > 0:
+                        alpha = frame.split()[3]
+                        alpha = alpha.point(lambda p: 0 if p == 255 else p)
+                        channels = list(frame.split())
+                        channels[3] = alpha
+                        frame = Image.merge("RGBA", channels)
+
+                yield frame
+
+                frame_index += 1
                 img.seek(img.tell() + 1)
         except EOFError:
             pass
-
-        if not frames:
-            return
-
-        trans_index = None
-        for f in frames:
-            if f.mode == "P" and "transparency" in f.info:
-                trans_index = f.info["transparency"]
-                break
-
-        for i, f in enumerate(frames):
-            if f.mode == "P":
-                f = f.convert("RGBA")
-
-                if trans_index is not None and i > 0:
-                    alpha = f.split()[3]
-                    alpha = alpha.point(lambda p: 0 if p == 255 else p)
-                    channels = list(f.split())
-                    channels[3] = alpha
-                    f = Image.merge("RGBA", channels)
-
-            yield f
 
     @staticmethod
     def get_gif_info(path: str) -> Optional[float]:

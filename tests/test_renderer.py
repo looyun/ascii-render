@@ -14,7 +14,9 @@ def test_renderer_basic():
         renderer = Renderer(RenderConfig(width=10))
         result = renderer.render(f.name)
         os.unlink(f.name)
-        assert len(result) > 0
+        assert result.dimensions == (10, 5)
+        assert len(result.char_indices) == 5
+        assert len(result.colors) == 5
 
 
 def test_renderer_invert():
@@ -24,4 +26,4 @@ def test_renderer_invert():
         renderer = Renderer(RenderConfig(width=10, invert=True))
         result = renderer.render(f.name)
         os.unlink(f.name)
-        assert len(result) > 0
+        assert result.dimensions == (10, 5)

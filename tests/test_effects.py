@@ -23,4 +23,5 @@ def test_renderer_with_glow():
         renderer.add_effect(GlowEffect())
         result = renderer.render(f.name)
         os.unlink(f.name)
-        assert len(result) > 0
+        assert result.dimensions == (10, 5)
+        assert len(result.char_indices) == 5

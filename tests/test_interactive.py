@@ -4,6 +4,7 @@ import tempfile
 import os
 from PIL import Image
 from ascii_render.types import RenderConfig, ColorMode
+from ascii_render.io.ansi import ANSIFormatter
 
 TERM_SIZE = (80, 24)
 
@@ -124,3 +125,27 @@ def test_ascii_art_canvas_gif():
     time.sleep(0.005)
     canvas._next_frame()
     assert canvas._frame_index == 2
+
+
+def test_ascii_art_canvas_color_mode_256():
+    from ascii_render.interactive.ascii_canvas import AsciiArtCanvas
+
+    img = Image.new("RGB", (20, 10), color=(128, 128, 128))
+    config = RenderConfig(color_mode=ColorMode.MODE_256)
+    canvas = AsciiArtCanvas(image=img, size=5, config=config, term_size=TERM_SIZE)
+    lines = canvas._static_ascii
+    assert len(lines) == 5
+    # 256-color mode should use 38;5 ANSI codes
+    assert any("\033[38;5;" in line for line in lines)
+
+
+def test_ascii_art_canvas_color_mode_8():
+    from ascii_render.interactive.ascii_canvas import AsciiArtCanvas
+
+    img = Image.new("RGB", (20, 10), color=(200, 0, 0))
+    config = RenderConfig(color_mode=ColorMode.MODE_8)
+    canvas = AsciiArtCanvas(image=img, size=5, config=config, term_size=TERM_SIZE)
+    lines = canvas._static_ascii
+    assert len(lines) == 5
+    # 8-color mode should use basic ANSI color codes
+    assert any("\033[" in line for line in lines)

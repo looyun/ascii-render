@@ -1,13 +1,25 @@
-from dataclasses import dataclass, field
-from typing import List, Optional, Protocol
+from dataclasses import dataclass
+from typing import Optional
 from enum import Enum
-from PIL import Image
 
 
 class ColorMode(Enum):
     MODE_8 = 8
     MODE_256 = 256
     TRUECOLOR = "truecolor"
+
+    @classmethod
+    def from_string(cls, value: str) -> "ColorMode":
+        """Parse a ColorMode from a string (e.g., '8', '256', 'truecolor')."""
+        mapping = {
+            "8": cls.MODE_8,
+            "256": cls.MODE_256,
+            "truecolor": cls.TRUECOLOR,
+        }
+        try:
+            return mapping[value.lower()]
+        except KeyError as exc:
+            raise ValueError(f"Invalid color mode: {value}") from exc
 
 
 @dataclass
@@ -25,9 +37,3 @@ class RenderResult:
     char_indices: list[list[int]]
     colors: list[list[tuple[int, int, int]]]
     dimensions: tuple[int, int]
-
-
-class Effect(Protocol):
-    def apply(self, image: Image.Image) -> Image.Image:
-        """Apply effect to image and return modified image."""
-        ...
